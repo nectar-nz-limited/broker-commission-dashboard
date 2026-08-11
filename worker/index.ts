@@ -13,11 +13,8 @@ interface Env {
       };
     };
   };
-  BQ_SERVICE_ACCOUNT_JSON?: string;
-  BQ_SERVICE_ACCOUNT_EMAIL?: string;
-  BQ_PRIVATE_KEY?: string;
-  BQ_PROJECT_ID?: string;
-  BQ_TOKEN_URI?: string;
+  INTEGRATIONS_HUB_CLIENT_ID?: string;
+  INTEGRATIONS_HUB_CLIENT_SECRET?: string;
 }
 
 interface ExecutionContext {

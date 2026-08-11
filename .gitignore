@@ -45,3 +45,5 @@ yarn-error.log*
 /.gcloud-direct/
 /.openai/
 /.codex/
+integrations-hub-*.json
+*.tsbuildinfo
