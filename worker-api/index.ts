@@ -93,8 +93,8 @@ async function queryBigQuery(env: Env, query: string) {
   // for a result set (which silently produced an empty dashboard).
   const data = asPayload(successBody.data);
   const result = asPayload(data.result || successBody.result || successBody.response || body);
-  const query = asPayload(result.query || result);
-  return rowsFromPayload(query, result);
+  const queryResult = asPayload(result.query || result);
+  return rowsFromPayload(queryResult, result);
 }
 
 function commissionQuery(end: string) {
