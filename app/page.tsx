@@ -2,6 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+const API_ORIGIN = "https://broker-commission-dashboard-api.edward-bell.workers.dev";
+const fetch: typeof globalThis.fetch = (input, init) => {
+  const target = typeof input === "string" && input.includes("performance-reporting.edward-bell.workers.dev")
+    ? input.replace("https://performance-reporting.edward-bell.workers.dev", API_ORIGIN)
+    : input;
+  return globalThis.fetch(target, init);
+};
+
 function completedMonthEnds(count = 12) {
   const now = new Date();
   const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -71,7 +79,7 @@ export default function Home() {
   currentFundedLoans = liveRows ? totals.loans.toLocaleString("en-NZ") : "—";
   const exportCsv = () => { const csv = ["Broker,Funded amount,Gross commission,Clawbacks,PPI commission", ...currentBrokers.map(x=>[x.broker,x.funded,x.gross,x.clawback,x.ppi].join(","))].join("\n"); const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download=`commission-${month}.csv`; a.click(); };
   return <main>
-    <header className="topbar"><div className="brand"><span className="mark">N</span><span>Nectar Finance</span><small>OPERATIONS / COMMISSION CONTROL</small></div><div className="top-actions"><span className="sync"><i/> Reference mode · 07 Aug 2026</span><button className="ghost" onClick={exportCsv}>Export CSV</button><button className="primary">Refresh model</button></div></header>
+    <header className="topbar"><div className="brand"><span className="mark"><img src="/nectar-humming.png" alt="" /></span><span>Nectar Finance</span><small>OPERATIONS / COMMISSION CONTROL</small></div><div className="top-actions"><span className="sync"><i/> Reference mode · 07 Aug 2026</span><button className="ghost" onClick={exportCsv}>Export CSV</button><button className="primary">Refresh model</button></div></header>
     <div className="shell">
       <aside><div className="eyebrow">Broker commission</div><h1>Broker commission<br/><em>dashboard.</em></h1><p className="intro">A transparent view of funded lending, partner rates and draft invoice readiness.</p><nav>{["Overview","Analytics","Weekly detail","Clawbacks","Commission rates","Invoice export","Underlying data"].map(x=><button key={x} className={tab===x?"active": ""} onClick={()=>setTab(x)}><span className="nav-dot"/>{x}</button>)}</nav><div className="side-note"><strong>Model status</strong><div className="status review">LIVE BQ</div><p>Selected-month figures are refreshed from the Salesforce applications table in BigQuery.</p></div></aside>
       <section className="content"><div className="crumb">COMMISSION CONTROL <span>/</span> {tab.toUpperCase()}</div><div className="title-row"><div><h2>{tab}</h2><p className="sub">Month-end outputs and audit controls for the selected close.</p></div><label className="month">MONTH-END<select value={month} onChange={e=>setMonth(e.target.value)}>{months.map(m=><option key={m}>{m}</option>)}</select></label></div>
