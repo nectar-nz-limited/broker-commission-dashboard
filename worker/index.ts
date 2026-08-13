@@ -1,7 +1,6 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import { queryBigQuery } from "./bigquery";
 
 interface Env {
   ASSETS: Fetcher;
@@ -13,11 +12,6 @@ interface Env {
       };
     };
   };
-  BQ_SERVICE_ACCOUNT_JSON?: string;
-  BQ_SERVICE_ACCOUNT_EMAIL?: string;
-  BQ_PRIVATE_KEY?: string;
-  BQ_PROJECT_ID?: string;
-  BQ_TOKEN_URI?: string;
 }
 
 interface ExecutionContext {
@@ -34,15 +28,6 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-
-    if (url.pathname === "/api/broker-commission" && request.method === "GET") {
-      try {
-        const monthEnd = url.searchParams.get("month_end") || "2026-06-30";
-        const query = `SELECT Partner_Name__c AS broker, COUNT(*) AS funded_loans, SUM(COALESCE(Amount_Financed__c, 0)) AS funded_amount, SUM(COALESCE(Broker_Fee__c, 0)) AS broker_fees FROM \`nectar-marketing-insights.salesforce_data_incremental.genesis__Applications__c\` WHERE Status_funded_trigger__c = TRUE AND Funding_Date__c <= DATE('${monthEnd}') GROUP BY broker ORDER BY funded_amount DESC LIMIT 500`;
-        const rows = await queryBigQuery(env, query);
-        return new Response(JSON.stringify({ month_end: monthEnd, source_table: "nectar-marketing-insights.salesforce_data_incremental.genesis__Applications__c", query_timestamp: new Date().toISOString(), rows }), { headers: { "content-type": "application/json", "cache-control": "no-store" } });
-      } catch (error) { return new Response(JSON.stringify({ error: "broker_commission_fetch_failed", message: String(error instanceof Error ? error.message : error) }), { status: 500, headers: { "content-type": "application/json" } }); }
-    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];

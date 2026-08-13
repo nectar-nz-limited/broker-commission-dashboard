@@ -1,0 +1,7 @@
+name = "broker-commission-dashboard-api"
+main = "index.ts"
+compatibility_date = "2026-08-13"
+
+[vars]
+FRONTEND_ORIGIN = "https://broker-commission-dashboard.edward-bell.workers.dev"
+INTEGRATIONS_HUB_URL = "https://integrations.flightcontrol.co.nz/api/v1/broker/bigquery/readonly-job"

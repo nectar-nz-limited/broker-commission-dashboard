@@ -1,7 +1,4 @@
-# Match the performance-reporting Worker secret contract.
-# Never commit real values.
-BQ_PROJECT_ID=nectar-marketing-insights
-BQ_SERVICE_ACCOUNT_EMAIL=
-BQ_PRIVATE_KEY=
-# Alternatively provide one JSON service-account secret:
-# BQ_SERVICE_ACCOUNT_JSON={"project_id":"nectar-marketing-insights","client_email":"...","private_key":"..."}
+# The API Worker uses an encrypted, production-only Integrations Hub identity.
+# Never commit real values. Configure these as Worker secrets, not frontend variables.
+INTEGRATIONS_HUB_CLIENT_ID=
+INTEGRATIONS_HUB_CLIENT_SECRET=
