@@ -1,5 +1,5 @@
 Exit code: 0
-Wall time: 0.6 seconds
+Wall time: 0.9 seconds
 Output:
 "use client";
 
@@ -113,7 +113,7 @@ function InvoiceExport({month,brokers,clawbackRows}:{month:string;brokers:Array<
   brokers=brokers.filter(x=>x.broker!=="Direct");
   const [weeklyRows,setWeeklyRows]=useState<Array<{broker:string;week_start:string;funded_loans:string;funded_base:string}>>([]);
   const [waiverRows,setWaiverRows]=useState<Array<{broker:string;funding_date:string;waiver_commission:string}>>([]);
-  useEffect(()=>{fetch(`https://broker-commission-dashboard-api.edward-bell.workers.dev/api/broker-week…20 tokens truncated…).then(r=>r.json()).then(x=>setWeeklyRows(x.rows||[])).catch(()=>setWeeklyRows([]));fetch("https://broker-commission-dashboard-api.edward-bell.workers.dev/api/broker-waiver").then(r=>r.json()).then(x=>setWaiverRows(x.rows||[])).catch(()=>setWaiverRows([]));},[month]);
+  useEffect(()=>{fetch(`https://broker-commission-dashboard-api.edward-bell.workers.dev/api/broker-week…54 tokens truncated…rd-bell.workers.dev/api/broker-waiver").then(r=>r.json()).then(x=>setWaiverRows(x.rows||[])).catch(()=>setWaiverRows([]));},[month]);
   const monthKey=new Date(month).toISOString().slice(0,7);
   const periodRows=useMemo(()=>{const out:Array<{broker:string;period:string;description:string;commission:number;clawback:number;waiver:number}>=[];const weeklyBrokers=new Set(Object.entries(activeFrequencies).filter(([,f])=>f==="Weekly").map(([b])=>b));weeklyRows.filter(x=>weeklyBrokers.has(x.broker)).forEach(x=>{const start=new Date(`${x.week_start}T00:00:00Z`);const end=new Date(start);end.setUTCDate(end.getUTCDate()+6);const endKey=end.toISOString().slice(0,10);const commission=(Number(x.funded_base)||0)*monthlyCommissionRate(x.broker,Number(x.funded_base)||0);const clawback=clawbackRows.filter(c=>c.broker===x.broker&&c.funding_date>=x.week_start&&c.funding_date<=endKey).reduce((a,c)=>a+(Number(c.commission_base)||0)*monthlyCommissionRate(x.broker,Number(c.commission_base)||0),0);const waiver=waiverRows.filter(w=>w.broker===x.broker&&w.funding_date>=x.week_start&&w.funding_date<=endKey).reduce((a,w)=>a+(Number(w.waiver_commission)||0),0);out.push({broker:x.broker,period:x.week_start,description:`Weekly commission · ${x.week_start} to ${endKey}`,commission,clawback,waiver});});brokers.filter(x=>!weeklyBrokers.has(x.broker)).forEach(x=>{const clawback=clawbackRows.filter(c=>c.broker===x.broker&&c.funding_date?.slice(0,7)===monthKey).reduce((a,c)=>a+(Number(c.commission_base)||0)*monthlyCommissionRate(x.broker,Number(c.commission_base)||0),0);const waiver=waiverRows.filter(w=>w.broker===x.broker&&w.funding_date?.slice(0,7)===monthKey).reduce((a,w)=>a+(Number(w.waiver_commission)||0),0);out.push({broker:x.broker,period:month,description:`Monthly commission · ${month}`,commission:x.gross,clawback,waiver});});return out;},[month,monthKey,weeklyRows,waiverRows,clawbackRows,brokers]);
   const exportCsv=()=>{const csv=["Broker,Period,Description,Commission,Clawback,NRW commission,Subtotal",...periodRows.map(x=>[x.broker,x.period,x.description,x.commission,x.clawback,x.waiver,x.commission-x.clawback+x.waiver].join(","))].join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=`invoice-export-${monthKey}.csv`;a.click();};
@@ -139,7 +139,8 @@ function UnderlyingData({month}:{month:string}){
   const weeks=useMemo(()=>["All weeks",...Array.from(new Set([...commissionRows.map(x=>monday(x.funding_date)),...clawbackRows.filter(x=>x.paid_off_date?.slice(0,7)===monthKey).map(x=>monday(x.paid_off_date)),...waiverRows.filter(x=>x.funding_date?.slice(0,7)===monthKey).map(x=>monday(x.funding_date))])).filter(x=>x!=="Invalid Date").sort()], [commissionRows,clawbackRows,waiverRows,monthKey]);
   const brokers=useMemo(()=>["All brokers",...Array.from(new Set([...commissionRows.map(x=>x.broker),...clawbackRows.map(x=>x.broker),...waiverRows.map(x=>x.broker)])).sort()], [commissionRows,clawbackRows,waiverRows]);
   const match=(name:string)=>broker==="All brokers"||name===broker;
-  const matchPeriod=(name:string,date:string)=>!weeklyBrokers.has(name)||week==="All weeks"||monday(date)===week;
+  const selectedBrokerIsWeekly=broker!=="All brokers"&&weeklyBrokers.has(broker);
+  const matchPeriod=(name:string,date:string)=>broker!=="All brokers"&&!selectedBrokerIsWeekly?true:!weeklyBrokers.has(name)||week==="All weeks"||monday(date)===week;
   const commissions=commissionRows.filter(x=>match(x.broker)&&matchPeriod(x.broker,x.funding_date));
   const clawbacks=clawbackRows.filter(x=>x.paid_off_date?.slice(0,7)===monthKey&&match(x.broker)&&matchPeriod(x.broker,x.paid_off_date));
   const waivers=waiverRows.filter(x=>x.funding_date?.slice(0,7)===monthKey&&match(x.broker)&&matchPeriod(x.broker,x.funding_date));
