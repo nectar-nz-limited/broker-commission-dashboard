@@ -87,7 +87,14 @@ async function queryBigQuery(env: Env, query: string) {
   const errorBody = body && typeof body === "object" ? body as { message?: unknown; error?: unknown } : {};
   if (!response.ok) throw new Error(String(errorBody.message || errorBody.error || `Integrations Hub query failed (${response.status})`));
   const successBody = body && typeof body === "object" ? body as { result?: unknown; data?: unknown; response?: unknown } : {};
-  return rowsFromPayload(successBody.result || successBody.data || successBody.response || body, body);
+  // The Hub returns its synchronous BigQuery result inside `data.result.query`.
+  // Keep the fallback shapes so the dashboard remains compatible with a direct
+  // BigQuery-shaped broker response, but do not mistake the outer Hub envelope
+  // for a result set (which silently produced an empty dashboard).
+  const data = asPayload(successBody.data);
+  const result = asPayload(data.result || successBody.result || successBody.response || body);
+  const query = asPayload(result.query || result);
+  return rowsFromPayload(query, result);
 }
 
 function commissionQuery(end: string) {
