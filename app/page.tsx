@@ -12,11 +12,12 @@ const fetch: typeof globalThis.fetch = (input, init) => {
 
 function completedMonthEnds(count = 12) {
   const now = new Date();
-  const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const current = now.toLocaleDateString("en-NZ", { day: "2-digit", month: "short", year: "numeric" });
+  const firstOfCurrentMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const format = (date: Date) => date.toLocaleDateString("en-NZ", { day: "2-digit", month: "short", year: "numeric", timeZone: "Pacific/Auckland" });
+  const current = format(now);
   return [current, ...Array.from({ length: count - 1 }, (_, index) => {
-    const end = new Date(firstOfCurrentMonth.getFullYear(), firstOfCurrentMonth.getMonth() - index, 0);
-    return end.toLocaleDateString("en-NZ", { day: "2-digit", month: "short", year: "numeric" });
+    const end = new Date(Date.UTC(firstOfCurrentMonth.getUTCFullYear(), firstOfCurrentMonth.getUTCMonth() - index, 0));
+    return format(end);
   })];
 }
 const months = completedMonthEnds();
