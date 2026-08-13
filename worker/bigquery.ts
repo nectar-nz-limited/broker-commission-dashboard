@@ -2,7 +2,7 @@ type BqEnv = { INTEGRATIONS_HUB_CLIENT_ID?: string; INTEGRATIONS_HUB_CLIENT_SECR
 
 export async function queryBigQuery(env:BqEnv, query:string){
   if(!env.INTEGRATIONS_HUB_CLIENT_ID || !env.INTEGRATIONS_HUB_CLIENT_SECRET) throw new Error("Integrations Hub credentials are not configured");
-  const r=await fetch("https://integrations.flightcontrol.co.nz/api/v1/broker/bigquery/readonly-job",{method:"POST",headers:{"CF-Access-Client-Id":env.INTEGRATIONS_HUB_CLIENT_ID,"CF-Access-Client-Secret":env.INTEGRATIONS_HUB_CLIENT_SECRET,"Content-Type":"application/json"},body:JSON.stringify({query,useLegacySql:false})});
+  const r=await fetch("https://integrations.flightcontrol.co.nz/api/v1/broker/bigquery/readonly-job",{method:"POST",headers:{"CF-Access-Client-ID":env.INTEGRATIONS_HUB_CLIENT_ID,"CF-Access-Client-Secret":env.INTEGRATIONS_HUB_CLIENT_SECRET,"Content-Type":"application/json"},body:JSON.stringify({action:"bigquery.job.create.readonly",query,useLegacySql:false,projectId:"nectar-marketing-insights",location:"australia-southeast1",maxBytesBilled:50000000000,maxRows:5000})});
   const contentType = r.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) throw new Error(`Integrations Hub unavailable (${r.status})`);
   const j=await r.json() as any;
