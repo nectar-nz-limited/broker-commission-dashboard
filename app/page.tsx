@@ -1155,14 +1155,14 @@ function InvoiceExport({
           .filter(
             (c) =>
               c.broker === x.broker &&
-              c.funding_date >= x.week_start &&
-              c.funding_date <= endKey,
+              c.paid_off_date >= x.week_start &&
+              c.paid_off_date <= endKey,
           )
           .reduce(
             (a, c) =>
               a +
               (Number(c.commission_base) || 0) *
-                monthlyCommissionRate(x.broker, Number(c.commission_base) || 0),
+                historicalCommissionRate(c.broker, c.funding_date, Number(c.commission_base) || 0),
             0,
           );
         const waiver = waiverRows
@@ -1188,13 +1188,13 @@ function InvoiceExport({
         const clawback = clawbackRows
           .filter(
             (c) =>
-              c.broker === x.broker && c.funding_date?.slice(0, 7) === monthKey,
+              c.broker === x.broker && c.paid_off_date?.slice(0, 7) === monthKey,
           )
           .reduce(
             (a, c) =>
               a +
               (Number(c.commission_base) || 0) *
-                monthlyCommissionRate(x.broker, Number(c.commission_base) || 0),
+                historicalCommissionRate(c.broker, c.funding_date, Number(c.commission_base) || 0),
             0,
           );
         const waiver = waiverRows
