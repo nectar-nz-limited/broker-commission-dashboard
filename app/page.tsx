@@ -44,6 +44,12 @@ function completedMonthEnds(count = 12) {
   ];
 }
 const months = completedMonthEnds();
+function monthEndValue(value: string) {
+  const match = String(value || "").match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+  if (!match) return new Date(value).toISOString().slice(0, 10);
+  const monthNumber = new Date(`${match[2]} 1, ${match[3]}`).getMonth() + 1;
+  return `${match[3]}-${String(monthNumber).padStart(2, "0")}-${String(match[1]).padStart(2, "0")}`;
+}
 const brokers = [
   {
     broker: "The Lending People",
@@ -272,7 +278,7 @@ export default function Home() {
     setBqError("");
     setLiveRows(null);
     fetch(
-      `https://broker-commission-dashboard-api.edward-bell.workers.dev/api/broker-commission?month_end=${encodeURIComponent(new Date(month).toISOString().slice(0, 10))}`,
+      `https://broker-commission-dashboard-api.edward-bell.workers.dev/api/broker-commission?month_end=${encodeURIComponent(monthEndValue(month))}`,
     )
       .then(async (r) => {
         const body = await r.json();
@@ -360,7 +366,7 @@ export default function Home() {
             status: "Live",
           };
         })
-      : brokers.map((x) => ({ ...x, loans: 0 }));
+      : [];
   currentOverviewBrokers = currentBrokers;
   currentOverviewMonth = month;
   const filtered = useMemo(
