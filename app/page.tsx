@@ -1214,9 +1214,12 @@ function InvoiceExport({
       });
     return out;
   }, [month, monthKey, weeklyRows, waiverRows, clawbackRows, brokers]);
+  const subtotal = (x: (typeof periodRows)[number]) => x.commission - x.clawback + x.waiver;
+  const gst = (x: (typeof periodRows)[number]) => x.waiver * 0.8 * 0.15;
+  const grandTotal = (x: (typeof periodRows)[number]) => subtotal(x) + gst(x);
   const exportCsv = () => {
     const csv = [
-      "Broker,Period,Description,Commission,Clawback,NRW commission,Subtotal",
+      "Broker,Period,Description,Commission,Clawback,NRW commission,Subtotal,GST,Grand total",
       ...periodRows.map((x) =>
         [
           x.broker,
@@ -1225,7 +1228,9 @@ function InvoiceExport({
           x.commission,
           x.clawback,
           x.waiver,
-          x.commission - x.clawback + x.waiver,
+          subtotal(x),
+          gst(x),
+          grandTotal(x),
         ].join(","),
       ),
     ].join("\n");
@@ -1253,6 +1258,8 @@ function InvoiceExport({
               <th>Clawback</th>
               <th>NRW commission</th>
               <th>Subtotal</th>
+              <th>GST</th>
+              <th>Grand total</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -1265,7 +1272,9 @@ function InvoiceExport({
                 <td>{fmt(x.commission)}</td>
                 <td>{fmt(x.clawback)}</td>
                 <td>{fmt(x.waiver)}</td>
-                <td>{fmt(x.commission - x.clawback + x.waiver)}</td>
+                <td>{fmt(subtotal(x))}</td>
+                <td>{fmt(gst(x))}</td>
+                <td>{fmt(grandTotal(x))}</td>
                 <td>
                   <Badge type="draft">Draft</Badge>
                 </td>
@@ -1278,12 +1287,11 @@ function InvoiceExport({
               <th>{fmt(periodRows.reduce((a, x) => a + x.waiver, 0))}</th>
               <th>
                 {fmt(
-                  periodRows.reduce(
-                    (a, x) => a + x.commission - x.clawback + x.waiver,
-                    0,
-                  ),
+                  periodRows.reduce((a, x) => a + subtotal(x), 0),
                 )}
               </th>
+              <th>{fmt(periodRows.reduce((a, x) => a + gst(x), 0))}</th>
+              <th>{fmt(periodRows.reduce((a, x) => a + grandTotal(x), 0))}</th>
               <th></th>
             </tr>
           </tbody>
@@ -1291,8 +1299,8 @@ function InvoiceExport({
       </div>
       <p className="sub">
         Weekly rows are shown only for brokers marked Weekly; monthly brokers
-        remain one monthly invoice line. GST is intentionally left at zero
-        pending your adjustment rules.
+        remain one monthly invoice line. GST is 15% of the taxable 80% share
+        of NRW waiver commission; the grand total is subtotal plus GST.
       </p>
     </Panel>
   );
