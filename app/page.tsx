@@ -1626,6 +1626,7 @@ function WeeklyDetail({ month }: { month: string }) {
       .then((x) => setRows(x.rows || []))
       .catch(() => setRows([]));
   }, [month]);
+  const monthKey = new Date(month).toISOString().slice(0, 7);
   const weeklyBrokers = Array.from(
     new Set(
       Object.entries(activeFrequencies)
