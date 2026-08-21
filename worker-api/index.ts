@@ -74,7 +74,7 @@ async function queryBigQuery(env: Env, query: string) {
       query,
       useLegacySql: false,
       projectId: "nectar-marketing-insights",
-      location: "US",
+      location: "australia-southeast1",
       maxBytesBilled: 50_000_000_000,
       maxResults: 5_000,
     }),
