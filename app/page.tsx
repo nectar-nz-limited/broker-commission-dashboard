@@ -1884,12 +1884,12 @@ function UnderlyingData({ month }: { month: string }) {
           ...clawbackRows.map((x) => x.broker),
           ...waiverRows.map((x) => x.broker),
         ]),
-      ).filter((name) => name.trim() !== "Direct").sort(),
+      ).filter((name) => String(name || "").trim() !== "Direct").sort(),
     ],
     [commissionRows, clawbackRows, waiverRows],
   );
   const match = (name: string) =>
-    name.trim() !== "Direct" &&
+    String(name || "").trim() !== "Direct" &&
     (broker === "All brokers" || name.trim() === broker);
   const selectedBrokerIsWeekly =
     broker !== "All brokers" && weeklyBrokers.has(broker.trim());
