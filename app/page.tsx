@@ -508,7 +508,7 @@ export default function Home() {
               <div className="cards">
                 <Metric
                   label="Funded loans"
-                  value="486"
+                  value={liveRows ? totals.loans.toLocaleString("en-NZ") : "—"}
                   note="Selected month from BQ"
                 />
                 <Metric
@@ -533,7 +533,7 @@ export default function Home() {
                 />
                 <Metric
                   label="Exceptions"
-                  value="2"
+                  value={liveExceptions.length ? liveExceptions.reduce((sum, row) => sum + (Number(row.count) || 0), 0).toLocaleString("en-NZ") : "—"}
                   note="BQ controls requiring review"
                   alert
                 />
