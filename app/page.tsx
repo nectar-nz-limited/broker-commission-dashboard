@@ -48,7 +48,7 @@ function historicalCommissionRate(broker:string, fundingDate:string, fallbackBas
 function monthlyCommissionRate(broker:string, funded:number){
   if (activeRates[broker] !== undefined && !["The Lending People","LoanPlace"].includes(broker)) return activeRates[broker];
   if (broker === "The Lending People") return funded >= 1500000 ? 0.04 : funded >= 1000000 ? 0.0375 : 0.035;
-  if (broker === "LoanPlace") return funded >= 1500000 ? 0.05 : funded >= 1000000 ? 0.041 : 0.035;
+  if (broker === "LoanPlace") return funded > 1500000 ? 0.041 : 0.035;
   if (broker === "Loansmart") return 0.035;
   if (broker === "Platinum Finance") return 0.035;
   return 0;
