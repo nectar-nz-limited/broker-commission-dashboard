@@ -191,11 +191,12 @@ function historicalCommissionRate(
   fundingDate: string,
   fallbackBase: number,
 ) {
-  const key = `${String(fundingDate || "").slice(0, 7)}|${broker.trim()}`;
+  const safeBroker = String(broker || "").trim();
+  const key = `${String(fundingDate || "").slice(0, 7)}|${safeBroker}`;
   const funded = activeHistoricalVolumes[key];
   return funded === undefined
-    ? monthlyCommissionRate(broker, fallbackBase)
-    : monthlyCommissionRate(broker, funded);
+    ? monthlyCommissionRate(safeBroker, fallbackBase)
+    : monthlyCommissionRate(safeBroker, funded);
 }
 function monthlyCommissionRate(broker: string, funded: number) {
   if (
@@ -1889,7 +1890,7 @@ function UnderlyingData({ month }: { month: string }) {
     [commissionRows, clawbackRows, waiverRows],
   );
   const match = (name: string) =>
-    broker === "All brokers" || name.trim() === broker;
+    broker === "All brokers" || String(name || "").trim() === broker;
   const selectedBrokerIsWeekly =
     broker !== "All brokers" && weeklyBrokers.has(broker.trim());
   const inSelectedWeek = (date: string) => {
