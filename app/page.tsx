@@ -1869,7 +1869,7 @@ function UnderlyingData({ month }: { month: string }) {
           ...waiverRows
             .filter((x) => x.funding_date?.slice(0, 7) === monthKey)
             .map((x) => monday(x.funding_date)),
-        ]).filter((name) => name.trim() !== "Direct"),
+        ]).filter((name) => String(name || "").trim() !== "Direct"),
       )
         .filter((x) => x !== "Invalid Date")
         .sort(),
@@ -1885,7 +1885,7 @@ function UnderlyingData({ month }: { month: string }) {
           ...clawbackRows.map((x) => x.broker),
           ...waiverRows.map((x) => x.broker),
         ]),
-      ).sort(),
+      ).filter((name) => String(name || "").trim() !== "Direct").sort(),
     ],
     [commissionRows, clawbackRows, waiverRows],
   );
@@ -1902,7 +1902,7 @@ function UnderlyingData({ month }: { month: string }) {
     return dateKey >= week && dateKey <= end.toISOString().slice(0, 10);
   };
   const matchPeriod = (name: string, date: string) => {
-    const isWeekly = weeklyBrokers.has(name.trim());
+    const isWeekly = weeklyBrokers.has(String(name || "").trim());
     return isWeekly
       ? week === "All weeks" || inSelectedWeek(date)
       : date?.slice(0, 7) === monthKey;
