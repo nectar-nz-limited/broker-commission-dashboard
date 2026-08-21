@@ -236,6 +236,7 @@ export default function Home() {
   }> | null>(null);
   const [bqError, setBqError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
   const [tab, setTab] = useState("Overview");
   const [search, setSearch] = useState("");
   const [rateOverrides, setRateOverrides] =
@@ -291,7 +292,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [month]);
+  }, [month, refreshToken]);
   useEffect(() => {
     fetch(
       "https://broker-commission-dashboard-api.edward-bell.workers.dev/api/broker-clawbacks",
@@ -299,7 +300,7 @@ export default function Home() {
       .then((r) => r.json())
       .then((body) => setClawbackRows(body.rows || []))
       .catch(() => setClawbackRows([]));
-  }, []);
+  }, [month, refreshToken]);
   useEffect(() => {
     const monthEnd = new Date().toISOString().slice(0, 10);
     fetch(
@@ -315,7 +316,7 @@ export default function Home() {
         setHistoricalVolumes(next);
       })
       .catch(() => setHistoricalVolumes({}));
-  }, []);
+  }, [month, refreshToken]);
   useEffect(() => {
     fetch(
       `https://broker-commission-dashboard-api.edward-bell.workers.dev/api/broker-exceptions?month_end=${encodeURIComponent(new Date(month).toISOString().slice(0, 10))}`,
@@ -323,7 +324,7 @@ export default function Home() {
       .then((r) => r.json())
       .then((body) => setLiveExceptions(body.rows || []))
       .catch(() => setLiveExceptions([]));
-  }, [month]);
+  }, [month, refreshToken]);
   const selectedMonthKey = new Date(month).toISOString().slice(0, 7);
   const currentBrokers =
     liveRows !== null
@@ -410,7 +411,9 @@ export default function Home() {
           <button className="ghost" onClick={exportCsv}>
             Export CSV
           </button>
-          <button className="primary">Refresh model</button>
+          <button className="primary" onClick={() => setRefreshToken((value) => value + 1)} disabled={loading}>
+            {loading ? "Refreshing…" : "Refresh model"}
+          </button>
         </div>
       </header>
       <div className="shell">
@@ -465,14 +468,14 @@ export default function Home() {
                 Month-end outputs and audit controls for the selected close.
               </p>
             </div>
-            <label className="month">
+            {tab === "Overview" && <label className="month">
               MONTH-END
               <select value={month} onChange={(e) => setMonth(e.target.value)}>
                 {months.map((m) => (
                   <option key={m}>{m}</option>
                 ))}
               </select>
-            </label>
+            </label>}
           </div>
           <div className="audit">
             <span>
