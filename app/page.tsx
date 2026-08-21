@@ -1789,6 +1789,32 @@ function BrokerAnalytics({ month }: { month: string }) {
 function UnderlyingData({ month }: { month: string }) {
   const [broker, setBroker] = useState("All brokers");
   const [week, setWeek] = useState("All weeks");
+  const [commission, setCommission] = useState<any[]>([]);
+  const [clawbacks, setClawbacks] = useState<any[]>([]);
+  const [waivers, setWaivers] = useState<any[]>([]);
+  useEffect(() => {
+    const end = new Date(month).toISOString().slice(0, 10);
+    Promise.all([
+      fetch(`${API_ORIGIN}/api/broker-underlying?month_end=${encodeURIComponent(end)}`).then((r) => r.json()),
+      fetch(`${API_ORIGIN}/api/broker-clawbacks`).then((r) => r.json()),
+      fetch(`${API_ORIGIN}/api/broker-waiver`).then((r) => r.json()),
+    ]).then(([c, cb, w]) => { setCommission(Array.isArray(c.rows) ? c.rows : []); setClawbacks(Array.isArray(cb.rows) ? cb.rows : []); setWaivers(Array.isArray(w.rows) ? w.rows : []); }).catch(() => { setCommission([]); setClawbacks([]); setWaivers([]); });
+  }, [month]);
+  const weekly = new Set(Object.entries(activeFrequencies).filter(([, f]) => f === "Weekly").map(([b]) => b));
+  const monthKey = new Date(month).toISOString().slice(0, 7);
+  const monday = (value: any) => { const d = new Date(`${String(value || "").slice(0, 10)}T00:00:00Z`); if (Number.isNaN(d.getTime())) return ""; const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() - day + 1); return d.toISOString().slice(0, 10); };
+  const inWeek = (value: any) => { if (week === "All weeks") return true; const start = new Date(`${week}T00:00:00Z`); const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6); const key = String(value || "").slice(0, 10); return key >= week && key <= end.toISOString().slice(0, 10); };
+  const include = (name: any, date: any) => { const b = String(name || "").trim(); if (!b || b === "Direct" || (broker !== "All brokers" && b !== broker)) return false; return weekly.has(b) ? inWeek(date) : String(date || "").slice(0, 7) === monthKey; };
+  const commissionRows = commission.filter((x) => include(x.broker, x.funding_date));
+  const clawbackRows = clawbacks.filter((x) => String(x.paid_off_date || "").slice(0, 7) === monthKey && include(x.broker, x.paid_off_date));
+  const waiverRows = waivers.filter((x) => String(x.funding_date || "").slice(0, 7) === monthKey && include(x.broker, x.funding_date));
+  const brokerOptions = Array.from(new Set([...commission, ...clawbacks, ...waivers].map((x) => String(x.broker || "").trim()).filter((b) => b && b !== "Direct"))).sort();
+  const weekOptions = Array.from(new Set([...commission, ...clawbacks, ...waivers].map((x) => monday(x.funding_date || x.paid_off_date)).filter(Boolean))).sort();
+  return <div><div className="table-tools"><label>Broker <select value={broker} onChange={(e) => setBroker(e.target.value)}><option>All brokers</option>{brokerOptions.map((b) => <option key={b}>{b}</option>)}</select></label><label>Week <select value={week} onChange={(e) => setWeek(e.target.value)}><option>All weeks</option>{weekOptions.map((w) => <option key={w}>{`Week commencing ${w}`}</option>)}</select></label><span className="sub">Live Salesforce data through BigQuery · monthly brokers are month-filtered; weekly brokers are week-filtered.</span></div><Panel title="Commission underlying data" action="Live BigQuery"><div className="table-wrap"><table><thead><tr><th>Application</th><th>Broker</th><th>Funding date</th><th>Amount funded</th><th>Broker fee</th></tr></thead><tbody>{commissionRows.map((x) => <tr key={x.application}><td>{x.application}</td><td>{x.broker}</td><td>{x.funding_date}</td><td>{Number(x.amount_funded || 0).toFixed(2)}</td><td>{Number(x.broker_fee || 0).toFixed(2)}</td></tr>)}</tbody></table></div></Panel><Panel title="Clawback underlying data" action="Historic rate basis"><div className="table-wrap"><table><thead><tr><th>Application</th><th>Broker</th><th>Funding date</th><th>Paid-off date</th><th>Commission base</th><th>Historic rate</th><th>Clawback</th></tr></thead><tbody>{clawbackRows.map((x) => { const base = Number(x.commission_base || 0); const rate = historicalCommissionRate(x.broker, x.funding_date, base); return <tr key={x.application}><td>{x.application}</td><td>{x.broker}</td><td>{x.funding_date}</td><td>{x.paid_off_date}</td><td>{base.toFixed(2)}</td><td>{(rate * 100).toFixed(2)}%</td><td>{(base * rate).toFixed(2)}</td></tr>; })}</tbody></table></div></Panel><Panel title="NRW waiver underlying data" action="35% waiver rate"><div className="table-wrap"><table><thead><tr><th>Application</th><th>Broker</th><th>Funding date</th><th>Incremental NRW</th><th>Waiver commission</th></tr></thead><tbody>{waiverRows.map((x) => <tr key={x.application}><td>{x.application}</td><td>{x.broker}</td><td>{x.funding_date}</td><td>{Number(x.incremental_nrw || 0).toFixed(2)}</td><td>{Number(x.waiver_commission || 0).toFixed(2)}</td></tr>)}</tbody></table></div></Panel></div>;
+}
+function UnderlyingDataLegacy({ month }: { month: string }) {
+  const [broker, setBroker] = useState("All brokers");
+  const [week, setWeek] = useState("All weeks");
   const [commissionRows, setCommissionRows] = useState<
     Array<{
       application: string;
