@@ -1148,7 +1148,7 @@ function InvoiceExport({
         .map(([b]) => b),
     );
     weeklyRows
-      .filter((x) => weeklyBrokers.has(x.broker))
+      .filter((x) => brokerFrequency(x.broker) === "Weekly")
       .forEach((x) => {
         const start = new Date(`${x.week_start}T00:00:00Z`);
         const end = new Date(start);
