@@ -186,6 +186,11 @@ const defaultFrequencies: Record<string, "Monthly" | "Weekly"> = {
 };
 let activeFrequencies = defaultFrequencies;
 let activeHistoricalVolumes: Record<string, number> = {};
+function brokerFrequency(value: string) {
+  const key = String(value || "").trim().toLowerCase();
+  const match = Object.entries(activeFrequencies).find(([broker]) => broker.trim().toLowerCase() === key);
+  return match?.[1] || "Monthly";
+}
 function historicalCommissionRate(
   broker: string,
   fundingDate: string,
@@ -1637,7 +1642,8 @@ function WeeklyDetail({ month }: { month: string }) {
   }, [selectedBroker, weeklyBrokers.join("|")]);
   const weeklyRows = rows.filter(
     (x) =>
-      activeFrequencies[x.broker.trim()] === "Weekly" &&
+      brokerFrequency(x.broker) === "Weekly" &&
+      x.week_start?.slice(0, 7) === monthKey &&
       (selectedBroker === "All brokers" || x.broker.trim() === selectedBroker),
   );
   const total = weeklyRows.reduce(
@@ -1800,17 +1806,17 @@ function UnderlyingData({ month }: { month: string }) {
       fetch(`${API_ORIGIN}/api/broker-waiver`).then((r) => r.json()),
     ]).then(([c, cb, w]) => { setCommission(Array.isArray(c.rows) ? c.rows : []); setClawbacks(Array.isArray(cb.rows) ? cb.rows : []); setWaivers(Array.isArray(w.rows) ? w.rows : []); }).catch(() => { setCommission([]); setClawbacks([]); setWaivers([]); });
   }, [month]);
-  const weekly = new Set(Object.entries(activeFrequencies).filter(([, f]) => f === "Weekly").map(([b]) => b));
+  const weekly = new Set(Object.entries(activeFrequencies).filter(([, f]) => f === "Weekly").map(([b]) => b.trim().toLowerCase()));
   const monthKey = new Date(month).toISOString().slice(0, 7);
   const monday = (value: any) => { const d = new Date(`${String(value || "").slice(0, 10)}T00:00:00Z`); if (Number.isNaN(d.getTime())) return ""; const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() - day + 1); return d.toISOString().slice(0, 10); };
   useEffect(() => { setWeek("All weeks"); }, [month]);
   const inWeek = (value: any) => { if (week === "All weeks") return true; const start = new Date(`${week}T00:00:00Z`); const end = new Date(start); end.setUTCDate(end.getUTCDate() + 6); const key = String(value || "").slice(0, 10); return key >= week && key <= end.toISOString().slice(0, 10); };
-  const include = (name: any, date: any) => { const b = String(name || "").trim(); if (!b || b === "Direct" || (broker !== "All brokers" && b !== broker)) return false; const isWeekly = weekly.has(b); if (isWeekly) return String(date || "").slice(0, 7) === monthKey && inWeek(date); return String(date || "").slice(0, 7) === monthKey; };
+  const include = (name: any, date: any) => { const b = String(name || "").trim(); if (!b || b.toLowerCase() === "direct" || (broker !== "All brokers" && b.toLowerCase() !== broker.trim().toLowerCase())) return false; const isWeekly = brokerFrequency(b) === "Weekly"; if (isWeekly) return String(date || "").slice(0, 7) === monthKey && inWeek(date); return String(date || "").slice(0, 7) === monthKey; };
   const commissionRows = commission.filter((x) => include(x.broker, x.funding_date));
   const clawbackRows = clawbacks.filter((x) => String(x.paid_off_date || "").slice(0, 7) === monthKey && include(x.broker, x.paid_off_date));
   const waiverRows = waivers.filter((x) => String(x.funding_date || "").slice(0, 7) === monthKey && include(x.broker, x.funding_date));
   const brokerOptions = Array.from(new Set([...commission, ...clawbacks, ...waivers].map((x) => String(x.broker || "").trim()).filter((b) => b && b !== "Direct"))).sort();
-  const weekOptions = Array.from(new Set([...commission, ...clawbacks, ...waivers].filter((x) => weekly.has(String(x.broker || "").trim())).map((x) => monday(x.funding_date || x.paid_off_date)).filter((w) => w && w.slice(0, 7) === monthKey))).sort();
+  const weekOptions = Array.from(new Set([...commission, ...clawbacks, ...waivers].filter((x) => brokerFrequency(x.broker) === "Weekly").map((x) => monday(x.funding_date || x.paid_off_date)).filter((w) => w && w.slice(0, 7) === monthKey))).sort();
   const downloadWorkbook = () => {
     const esc = (value: any) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
     const sheet = (name: string, headers: string[], rows: any[][]) => `<Worksheet ss:Name="${esc(name)}"><Table><Row>${headers.map((h) => `<Cell><Data ss:Type="String">${esc(h)}</Data></Cell>`).join("")}</Row>${rows.map((row) => `<Row>${row.map((v) => `<Cell><Data ss:Type="${typeof v === "number" ? "Number" : "String"}">${esc(v)}</Data></Cell>`).join("")}</Row>`).join("")}</Table></Worksheet>`;
@@ -2256,19 +2262,19 @@ function MonthlyDetail({ month }: { month: string }) {
   const monthKey = new Date(month).toISOString().slice(0, 7);
   const filtered = rows.filter(
     (x) =>
-      activeFrequencies[x.broker.trim()] === "Monthly" &&
+      brokerFrequency(x.broker) === "Monthly" &&
       (selectedBroker === "All brokers" || x.broker.trim() === selectedBroker),
   );
   const filteredClawbacks = clawbacks.filter(
     (x) =>
       x.paid_off_date?.slice(0, 7) === monthKey &&
-      activeFrequencies[x.broker.trim()] === "Monthly" &&
+      brokerFrequency(x.broker) === "Monthly" &&
       (selectedBroker === "All brokers" || x.broker.trim() === selectedBroker),
   );
   const filteredWaivers = waivers.filter(
     (x) =>
       x.funding_date?.slice(0, 7) === monthKey &&
-      activeFrequencies[x.broker.trim()] === "Monthly" &&
+      brokerFrequency(x.broker) === "Monthly" &&
       (selectedBroker === "All brokers" || x.broker.trim() === selectedBroker),
   );
   const totalCommission = filtered.reduce(
